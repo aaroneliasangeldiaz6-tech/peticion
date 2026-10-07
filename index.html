@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tengo algo que preguntarte</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Pinyon+Script&family=Quicksand:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#1d0b19; --bg2:#431535; --rose:#ff6b8f; --blush:#ffe3ea; --gold:#f5c36b; --ink:#fff4f6;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{
+  height:100%;margin:0;overflow:hidden;color:var(--ink);
+  background:radial-gradient(120% 90% at 50% 0%,var(--bg2),var(--bg) 70%) var(--bg);
+  font-family:'Quicksand',system-ui,-apple-system,'Segoe UI',sans-serif;
+}
+canvas{position:fixed;inset:0;width:100%;height:100%;pointer-events:none}
+main{position:relative;height:100%;display:grid;place-items:center;padding:24px}
+.slide{max-width:30rem;text-align:center;animation:in .9s ease both}
+@keyframes in{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+h1{
+  font-family:'Pinyon Script','Snell Roundhand','Brush Script MT',cursive;
+  font-weight:400;font-size:clamp(2.8rem,11vw,4.8rem);line-height:1.1;margin:0 0 .5em;
+  color:var(--blush);text-shadow:0 0 28px rgba(255,107,143,.55);
+}
+p{font-size:clamp(1.1rem,4.4vw,1.35rem);line-height:1.65;margin:0 0 1.6em;color:#ffdce5}
+.row{display:flex;flex-wrap:wrap;gap:16px;justify-content:center;align-items:center;min-height:64px}
+.btn{
+  font:600 1.1rem 'Quicksand',system-ui,sans-serif;cursor:pointer;border:0;border-radius:999px;
+  padding:.85em 2em;background:var(--rose);color:#2b0a1c;
+  box-shadow:0 8px 28px rgba(255,107,143,.4);transition:transform .25s ease,box-shadow .25s ease;
+}
+.btn:hover{box-shadow:0 10px 34px rgba(255,107,143,.65)}
+.btn.ghost{background:transparent;color:var(--blush);border:1.5px solid rgba(255,227,234,.5);box-shadow:none}
+.btn:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
+.sign{font-family:'Pinyon Script',cursive;font-size:2rem;color:var(--gold);margin:0}
+@media (prefers-reduced-motion:reduce){.slide{animation:none}.btn{transition:none}}
+</style>
+</head>
+<body>
+<canvas id="c" aria-hidden="true"></canvas>
+<main><div id="app" class="slide" aria-live="polite"></div></main>
+
+<script>
+// ✏️ Cambia estos datos y los textos de abajo para personalizarla
+const NOMBRE = 'Fernanda';
+const YO = 'Elias';
+
+const app = document.getElementById('app');
+const slides = [
+  { h: `Hola, ${NOMBRE}`, p: 'Preparé algo para ti. Ábrelo con calma.', b: 'Abrir' },
+  { p: 'Contigo hasta los días normales se sienten bonitos.', b: 'Sigue' },
+  { p: 'Me haces reír, me das paz y me dan ganas de ser mejor cada día.', b: 'Sigue' },
+  { p: 'Y me di cuenta de que quiero seguir escribiendo esta historia contigo.', b: 'Sigue' }
+];
+let i = 0, tries = 0;
+
+function show(html){
+  app.style.animation = 'none'; void app.offsetWidth; app.style.animation = '';
+  app.innerHTML = html;
+}
+function next(){
+  const s = slides[i];
+  show(`${s.h ? `<h1>${s.h}</h1>` : ''}<p>${s.p}</p><div class="row"><button class="btn" id="go">${s.b}</button></div>`);
+  const go = document.getElementById('go');
+  go.focus({preventScroll:true});
+  go.onclick = () => { i++; i < slides.length ? next() : ask(); };
+}
+
+const noTexts = ['No', '¿Segura?', 'Piénsalo bien', 'Mira que no puedes', 'Dale al sí 🥺', 'Ni lo intentes'];
+function ask(){
+  show(`<h1>${NOMBRE}, ¿quieres ser mi novia?</h1>
+    <div class="row"><button class="btn" id="yes">Sí 💖</button><button class="btn ghost" id="no">No</button></div>`);
+  const yes = document.getElementById('yes'), no = document.getElementById('no');
+  yes.onclick = celebrate;
+  const dodge = e => {
+    e.preventDefault();
+    tries++;
+    no.textContent = noTexts[Math.min(tries, noTexts.length - 1)];
+    no.style.position = 'fixed';
+    const w = innerWidth - no.offsetWidth - 24, h = innerHeight - no.offsetHeight - 24;
+    no.style.left = 12 + Math.random() * Math.max(w, 0) + 'px';
+    no.style.top = 12 + Math.random() * Math.max(h, 0) + 'px';
+    yes.style.transform = `scale(${Math.min(1 + tries * .1, 1.5)})`;
+  };
+  no.addEventListener('pointerenter', dodge);
+  no.addEventListener('pointerdown', dodge);
+  no.addEventListener('click', e => e.preventDefault());
+}
+
+function celebrate(){
+  show(`<h1>Dijiste que sí 💖</h1>
+    <p>Eres lo mejor que me ha pasado. Gracias por elegirme, ${NOMBRE}. Te quiero muchísimo.</p>
+    <p class="sign">${YO}</p>`);
+  burst();
+}
+
+/* ---------- Corazones de fondo y celebración ---------- */
+const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+let W, H, dpr, parts = [];
+const colors = ['#ff6b8f', '#ffb3c6', '#f5c36b', '#ffe3ea', '#d86bff'];
+function resize(){
+  dpr = devicePixelRatio || 1; W = innerWidth; H = innerHeight;
+  cv.width = W * dpr; cv.height = H * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+addEventListener('resize', resize); resize();
+
+function floater(fresh){
+  return { x: Math.random() * W, y: fresh ? H + 20 : Math.random() * H, vx: (Math.random() - .5) * .3,
+    vy: -(.3 + Math.random() * .6), s: 10 + Math.random() * 18, a: .15 + Math.random() * .35,
+    c: colors[Math.floor(Math.random() * colors.length)], g: 0, ambient: true };
+}
+if (!calm) for (let k = 0; k < 26; k++) parts.push(floater(false));
+
+function burst(){
+  const n = calm ? 40 : 140;
+  for (let k = 0; k < n; k++){
+    const ang = Math.random() * Math.PI * 2, sp = 3 + Math.random() * 7;
+    parts.push({ x: W / 2, y: H / 2, vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp - 3,
+      s: 12 + Math.random() * 22, a: 1, c: colors[Math.floor(Math.random() * colors.length)], g: .12, ambient: false });
+  }
+}
+function tick(){
+  ctx.clearRect(0, 0, W, H);
+  for (let k = parts.length - 1; k >= 0; k--){
+    const p = parts[k];
+    p.x += p.vx; p.y += p.vy; p.vy += p.g;
+    if (p.ambient){ if (p.y < -30) parts[k] = floater(true); }
+    else { p.a -= .006; if (p.a <= 0 || p.y > H + 40){ parts.splice(k, 1); continue; } }
+    ctx.globalAlpha = Math.max(p.a, 0); ctx.fillStyle = p.c;
+    ctx.font = p.s + 'px serif'; ctx.textAlign = 'center'; ctx.fillText('♥', p.x, p.y);
+  }
+  requestAnimationFrame(tick);
+}
+tick();
+next();
+</script>
+</body>
+</html>
